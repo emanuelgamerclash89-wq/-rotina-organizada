@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#160e24">
+<title>Método Rotina Organizada</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#100d16;color:#fff;font-family:Arial,sans-serif}
+header{padding:25px 18px;background:linear-gradient(135deg,#35145b,#100d16)}
+header small{color:#c7a1ff;letter-spacing:2px}
+h1{font-size:30px;margin:8px 0}
+h1 span{color:#a875ff}
+main{max-width:700px;margin:auto;padding:15px}
+nav{display:flex;gap:7px;overflow:auto;margin-bottom:15px}
+button{border:0;border-radius:9px;background:#7c3aed;color:white;padding:11px 14px;font-weight:bold;cursor:pointer}
+nav button{white-space:nowrap}
+nav .off{background:#30253e}
+.card{background:#1d1826;border:1px solid #3b2d4b;border-radius:14px;padding:15px;margin-bottom:13px}
+h2{font-size:18px;margin:0 0 12px}
+input,textarea{width:100%;padding:12px;background:#17121f;color:white;border:1px solid #4b3a5e;border-radius:9px;font-size:16px}
+.add{display:flex;gap:8px;margin-top:10px}
+.add button{font-size:20px}
+.item{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid #382a47}
+.item input{width:20px}
+.item span{flex:1;overflow-wrap:anywhere}
+.item.done span{text-decoration:line-through;color:#9b8da9}
+.del{background:transparent;color:#c5a2ff;padding:5px}
+.stats{display:flex;gap:10px}
+.stat{background:#2a2037;padding:12px;border-radius:10px;flex:1}
+.stat strong{display:block;font-size:25px;color:#c5a2ff}
+.muted{font-size:13px;color:#b5aabd}
+.bar{height:7px;background:#382a47;border-radius:9px;margin-top:10px}
+.bar div{height:100%;width:0;background:#9b5cff;border-radius:9px}
+section[hidden]{display:none}
+</style>
+</head>
+<body>
+<header>
+<small>SEU PLANNER DIGITAL</small>
+<h1>Rotina <span>Organizada.</span></h1>
+<div class="muted">Planeje • Organize • Conquiste</div>
+</header>
+<main>
+<nav>
+<button data-tab="dia">Meu dia</button>
+<button class="off" data-tab="habitos">Hábitos</button>
+<button class="off" data-tab="metas">Metas</button>
+<button class="off" data-tab="notas">Anotações</button>
+</nav>
+<section id="dia">
+<div class="card">
+<h2>Olá! Vamos organizar seu dia? ✦</h2>
+<p class="muted" id="today"></p>
+<div class="stats">
+<div class="stat"><span class="muted">Tarefas feitas</span><strong id="count">0/0</strong></div>
+<div class="stat"><span class="muted">Progresso</span><strong id="percent">0%</strong></div>
+</div>
+<div class="bar"><div id="progress"></div></div>
+</div>
+<div class="card">
+<h2>Minhas tarefas</h2>
+<div id="tasks"></div>
+<div class="add"><input id="taskInput" placeholder="Digite uma tarefa"><button id="addTask">+</button></div>
+</div>
+<div class="card">
+<h2>Meu foco de hoje</h2>
+<input id="focus" placeholder="Minha prioridade principal">
+</div>
+</section>
+<section id="habitos" hidden>
+<div class="card">
+<h2>Meus hábitos 💜</h2>
+<p class="muted">Marque os hábitos que realizou hoje.</p>
+<div id="habits"></div>
+<div class="add"><input id="habitInput" placeholder="Adicionar hábito"><button id="addHabit">+</button></div>
+</div>
+</section>
+<section id="metas" hidden>
+<div class="card">
+<h2>Minhas metas 🎯</h2>
+<p class="muted">Organize seus objetivos.</p>
+<div id="goals"></div>
+<div class="add"><input id="goalInput" placeholder="Adicionar uma meta"><button id="addGoal">+</button></div>
+</div>
+</section>
+<section id="notas" hidden>
+<div class="card">
+<h2>Minhas anotações 📝</h2>
+<textarea id="notes" rows="10" placeholder="Escreva suas ideias..."></textarea>
+</div>
+</section>
+<p class="muted" style="text-align:center">Suas informações ficam salvas neste navegador.</p>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const KEY='rotinaOrganizadaApp';
+let data;
+try{data=JSON.parse(localStorage.getItem(KEY))||{tasks:[],habits:[],goals:[],notes:'',focus:'',checks:{}}}catch(e){data={tasks:[],habits:[],goals:[],notes:'',focus:'',checks:{}}}
+const day=new Date().toISOString().slice(0,10);
+$('today').textContent=new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+function save(){localStorage.setItem(KEY,JSON.stringify(data))}
+function safe(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function drawList(type,id){
+ const host=$(id);host.innerHTML='';
+ data[type].forEach((item,i)=>{
+  const checked=type==='habits'?!!(data.checks[day]&&data.checks[day][i]):!!item.done;
+  const row=document.createElement('div');row.className='item'+(checked?' done':'');
+  row.innerHTML='<input type="checkbox" '+(checked?'checked':'')+'><span>'+safe(item.text)+'</span><button class="del">×</button>';
+  row.querySelector('input').onchange=e=>{
+   if(type==='habits'){data.checks[day]=data.checks[day]||{};data.checks[day][i]=e.target.checked}
+   else item.done=e.target.checked;
+   save();render();
+  };
+  row.querySelector('.del').onclick=()=>{data[type].splice(i,1);save();render()};
+  host.appendChild(row);
+ });
+}
+function render(){
+ drawList('tasks','tasks');drawList('habits','habits');drawList('goals','goals');
+ const done=data.tasks.filter(t=>t.done).length;
+ const pct=data.tasks.length?Math.round(done/data.tasks.length*100):0;
+ $('count').textContent=done+'/'+data.tasks.length;
+ $('percent').textContent=pct+'%';$('progress').style.width=pct+'%';
+ $('notes').value=data.notes;$('focus').value=data.focus;
+}
+function add(type,id){
+ const value=$(id).value.trim();if(!value)return;
+ data[type].push({text:value,done:false});$(id).value='';save();render();
+}
+$('addTask').onclick=()=>add('tasks','taskInput');
+$('addHabit').onclick=()=>add('habits','habitInput');
+$('addGoal').onclick=()=>add('goals','goalInput');
+['taskInput','habitInput','goalInput'].forEach((id,i)=>$(id).onkeydown=e=>{
+ if(e.key==='Enter')add(['tasks','habits','goals'][i],id);
+});
+$('notes').oninput=e=>{data.notes=e.target.value;save()};
+$('focus').oninput=e=>{data.focus=e.target.value;save()};
+document.querySelectorAll('[data-tab]').forEach(btn=>btn.onclick=()=>{
+ document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('off',b!==btn));
+ ['dia','habitos','metas','notas'].forEach(id=>$(id).hidden=id!==btn.dataset.tab);
+});
+render();
+</script>
+</body>
+</html>
