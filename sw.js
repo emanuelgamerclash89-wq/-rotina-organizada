@@ -1,4 +1,4 @@
-const CACHE = "rotina-organizada-v1";
+const CACHE = "rotina-organizada-v2";
 const FILES = [
   "./",
   "./index.html",
